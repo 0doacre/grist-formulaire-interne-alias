@@ -1,0 +1,1185 @@
+/* =============================================================================
+   GRIST CUSTOM FORM WIDGET - Styles
+   Prefer Grist theme variables; fall back to the widget's original colors.
+   ============================================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--grist-theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+  background: var(--grist-theme-bg-secondary, #fff);
+  padding: 24px;
+  color: var(--grist-theme-text, #37352f);
+  display: flex;
+  justify-content: center;
+}
+
+*:focus {
+  outline: 2px solid var(--grist-theme-primary, #2383e2);
+  outline-offset: 1px;
+}
+
+/* -----------------------------------------------------------------------------
+   Container principal
+   ----------------------------------------------------------------------------- */
+
+.container {
+  width: 500px;
+}
+
+/* -----------------------------------------------------------------------------
+   Modal de configuration
+   ----------------------------------------------------------------------------- */
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--grist-theme-modal-bg, white);
+  z-index: 2000;
+}
+
+.modal.show {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--grist-theme-modal-bg, white);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 20px var(--grist-theme-modal-shadow-outer, rgba(0, 0, 0, 0.15));
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--grist-theme-decoration, #e0e0e0);
+}
+
+.modal-header h2 {
+  font-size: var(--grist-theme-large-font-size, 16px);
+  font-weight: var(--grist-theme-header-control-text-weight, 600);
+  color: var(--grist-theme-text-dark, inherit);
+}
+
+.preview-btn {
+  padding: 6px 10px;
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+  border: none;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+}
+
+.preview-btn:hover {
+  background: var(--grist-theme-control-primary-hover-bg, #1a6bb8);
+}
+
+/* -----------------------------------------------------------------------------
+   Parametres globaux
+   ----------------------------------------------------------------------------- */
+
+.global-settings {
+  display: flex;
+  gap: 24px;
+  padding: 12px;
+  background: var(--grist-theme-bg-secondary, #f5f5f5);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  margin-bottom: 16px;
+}
+
+.setting-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.setting-group label {
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  color: var(--grist-theme-text-light, #666);
+}
+
+.setting-select {
+  padding: 6px 10px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  background: var(--grist-theme-input-bg, white);
+  color: var(--grist-theme-input-fg, inherit);
+  cursor: pointer;
+}
+
+/* -----------------------------------------------------------------------------
+   Liste des elements (modal)
+   ----------------------------------------------------------------------------- */
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  padding-right: 8px;
+  padding-top: 20px;
+}
+
+.element-item {
+  padding: 8px 10px 8px 36px;
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  margin-bottom: 12px;
+  background: var(--grist-theme-bg-secondary, #f9f9f9);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.element-item.dragging {
+  opacity: 0.5;
+}
+
+.element-item.drag-over-top {
+  border-top: 2px solid var(--grist-theme-primary, #2383e2);
+}
+
+.element-item.drag-over-bottom {
+  border-bottom: 2px solid var(--grist-theme-primary, #2383e2);
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--grist-theme-secondary, #999);
+  user-select: none;
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.element-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  align-self: center;
+}
+
+.element-preview {
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text, #37352f);
+  margin-bottom: 4px;
+}
+
+.element-preview.separator {
+  height: 1px;
+  background: var(--grist-theme-decoration, #e0e0e0);
+  margin: 0;
+}
+
+.element-preview.text {
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text, #37352f);
+  white-space: pre-wrap;
+}
+
+.element-preview.field {
+  font-size: var(--grist-theme-small-font-size, 11px);
+  color: var(--grist-theme-text-light, #666);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.field-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.field-label-text {
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  font-weight: 500;
+  color: var(--grist-theme-text, #37352f);
+}
+
+/* -----------------------------------------------------------------------------
+   Boutons de controle des elements
+   ----------------------------------------------------------------------------- */
+
+.element-controls {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.element-controls button {
+  background: var(--grist-theme-bg-default, #fff);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  cursor: pointer;
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  padding: 10px;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  color: var(--grist-theme-text, inherit);
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.element-controls button:hover {
+  background: var(--grist-theme-hover-light, #f0f0f0);
+}
+
+/* Pressable icon buttons: same outer size as non-pressable (padding 10px
+   around a 13px icon). The 2px outer padding is the gap to the inner face;
+   the inner keeps a 1px transparent border + 7px padding so totals match. */
+.element-controls .icon-btn:has(> .icon-btn-inner) {
+  padding: 3px;
+}
+
+.icon-btn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+/* Pressed state styles the inner face only (Grist buttonSelect selected). */
+.icon-btn.active > .icon-btn-inner {
+  background: var(--grist-theme-button-group-selected-bg, #e8f0fe);
+  border-color: var(--grist-theme-button-group-selected-border, #2383e2);
+  color: var(--grist-theme-button-group-selected-border, #2383e2);
+}
+
+/* -----------------------------------------------------------------------------
+   Section ajout d'element
+   ----------------------------------------------------------------------------- */
+
+.add-section {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--grist-theme-bg-secondary, #f9f9f9);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+}
+
+.add-section-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-element-btn {
+  padding: 6px 10px;
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+  border: none;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+  white-space: nowrap;
+  max-height: 37px;
+}
+
+.add-element-btn:hover {
+  background: var(--grist-theme-control-primary-hover-bg, #1a6bb8);
+}
+
+.element-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+/* -----------------------------------------------------------------------------
+   Champs du formulaire
+   ----------------------------------------------------------------------------- */
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field.checkbox-field {
+  display: flex;
+  align-items: center;
+  column-gap: 8px;
+  /* flex-wrap so .error-message drops to a new line (via flex-basis: 100%
+     below) instead of sitting to the right of the label. */
+  flex-wrap: wrap;
+}
+
+.field.checkbox-field label {
+  margin-bottom: 0;
+}
+
+.field.checkbox-field .error-message {
+  flex-basis: 100%;
+}
+
+.field.hidden {
+  display: none;
+}
+
+label {
+  display: block;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--grist-theme-text, #37352f);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, #37352f);
+  transition: border-color 0.2s;
+}
+
+textarea {
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--grist-theme-checkbox-selected-bg, #2383e2);
+}
+
+select[multiple] {
+  min-height: 120px;
+  padding: 8px;
+}
+
+select[multiple] option {
+  padding: 6px 8px;
+  border-radius: 3px;
+  margin: 2px 0;
+}
+
+select[multiple] option:checked {
+  background: var(--grist-theme-primary, #2383e2);
+  color: var(--grist-theme-white, white);
+}
+
+/* -----------------------------------------------------------------------------
+   Custom select (with search and chips)
+   ----------------------------------------------------------------------------- */
+
+/* Visually hide an element while keeping it readable by screen readers.
+   Used for the multi-select chip count (aria-describedby), the shared
+   "retirer" description, and the polite live region. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+/* Chip list (multi-select only). ul reset + horizontal wrap. */
+.chips {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-item {
+  display: inline-flex;
+}
+
+/* Each chip is a <button> whose accessible name is the value.
+   Click / Enter / Space / Backspace / Delete remove it. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--grist-theme-token-selection-opaque, #e8f0fe);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+  font-family: var(--grist-theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+  color: var(--grist-theme-primary, #0d5bba);
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.chip:hover {
+  background: var(--grist-theme-token-selection-darker-opaque, #d2e3fc);
+}
+
+
+/* The × glyph is decorative (aria-hidden in the markup). */
+.chip-x {
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--grist-theme-text-light, #666);
+}
+
+[data-grist-appearance="dark"] .chip {
+  background: var(--grist-theme-decoration-secondary, #e8f0fe);
+  color: var(--grist-theme-text, #0d5bba);
+}
+
+[data-grist-appearance="dark"] .chip-x {
+  color: var(--grist-theme-text, #0d5bba);
+}
+
+.custom-select-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--grist-theme-select-button-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  background: var(--grist-theme-select-button-bg, #fff);
+  cursor: pointer;
+  min-height: 42px;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--grist-theme-select-button-fg, inherit);
+  text-align: left;
+}
+
+.custom-select.open .custom-select-display {
+  border-color: var(--grist-theme-primary, #2383e2);
+}
+
+.placeholder,
+.single-value {
+  color: var(--grist-theme-text, #37352f);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-family: var(--grist-theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+}
+
+.placeholder {
+  color: var(--grist-theme-input-placeholder-fg, #595959);
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  color: var(--grist-theme-text-light, #666);
+  margin-left: 8px;
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--grist-theme-menu-bg, white);
+  border: 1px solid var(--grist-theme-menu-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  box-shadow: 0 4px 12px var(--grist-theme-menu-shadow, rgba(0, 0, 0, 0.15));
+  z-index: 1000;
+  margin-top: 4px;
+  font-family: var(--grist-theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--grist-theme-search-border, #999999);
+  border-radius: var(--grist-theme-control-border-radius, 4px) var(--grist-theme-control-border-radius, 4px) 0 0;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-family: inherit;
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-family: inherit;
+  color: var(--grist-theme-menu-item-fg, inherit);
+  border-left: 3px solid transparent;
+}
+
+/* Fixed-width slot so labels don't shift when a checkmark appears. */
+.option-check {
+  flex: 0 0 1em;
+  width: 1em;
+  text-align: center;
+  font-weight: 700;
+  color: var(--grist-theme-text, #0d5bba);
+}
+
+.option.empty {
+  font-style: italic;
+}
+
+.option:hover,
+.option.active {
+  background: var(--grist-theme-hover, #e3e3e3);
+  border-left-color: var(--grist-theme-primary, #2383e2);
+}
+
+.option.selected {
+  background: var(--grist-theme-decoration-secondary, #e8f0fe);
+  color: var(--grist-theme-text, #0d5bba);
+  font-weight: 500;
+}
+
+.option.active.selected,
+.option:hover.selected {
+  background: var(--grist-theme-decoration-secondary, #e8f0fe);
+  color: var(--grist-theme-text, #0d5bba);
+}
+
+.no-results {
+  padding: 10px 12px;
+  color: var(--grist-theme-text-light, #595959);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  text-align: center;
+}
+
+/* Ref dropdown filter popup */
+.ref-filter-rule {
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  color: var(--grist-theme-text, #37352f);
+  background: var(--grist-theme-bg-secondary, #f5f5f5);
+  padding: 8px 12px;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  width: 100%;
+}
+
+.ref-filter-rule code {
+  font-family: var(--grist-theme-font-family-mono, monospace);
+  color: var(--grist-theme-primary, #0d5bba);
+}
+
+.ref-filter-no-fields {
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  color: var(--grist-theme-text-light, #595959);
+  font-style: italic;
+}
+
+.filter-too-many {
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  color: var(--grist-theme-error, #d32f2f);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.dropdown-loading {
+  padding: 12px;
+  color: var(--grist-theme-text-light, #595959);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  text-align: center;
+}
+
+.more-results {
+  padding: 8px 12px;
+  font-size: var(--grist-theme-x-small-font-size, 12px);
+  color: var(--grist-theme-text-light, #595959);
+  font-style: italic;
+  text-align: center;
+  border-top: 1px solid var(--grist-theme-decoration, #e0e0e0);
+}
+
+/* -----------------------------------------------------------------------------
+   Messages et erreurs
+   ----------------------------------------------------------------------------- */
+
+/* Help + error stay in the DOM (template without v-if) to avoid spurious
+   "new content" announcements by Firefox+VoiceOver. :empty hides the box
+   when there's no text — a CSS transition, ignored by screen readers. */
+.help-text {
+  color: var(--grist-theme-text-light, #666);
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  margin-top: 4px;
+}
+
+.help-text:empty {
+  display: none;
+}
+
+.error-message {
+  color: var(--grist-theme-text-error, #d32f2f);
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  margin-top: 4px;
+}
+
+.error-message:empty {
+  display: none;
+}
+
+.form-error {
+  color: var(--grist-theme-text-error, #d32f2f);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--grist-theme-custom-css-uikit-error-100, #ffebee);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  display: none;
+  text-align: center;
+}
+
+.form-error.show {
+  display: block;
+}
+
+.form-success {
+  color: var(--grist-theme-custom-css-uikit-success-600, #2e7d32);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--grist-theme-custom-css-uikit-success-100, #e8f5e9);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  display: none;
+  text-align: center;
+  outline: none;
+}
+
+.form-success.show {
+  display: block;
+}
+
+.form-success:focus-visible {
+  outline: 2px solid var(--grist-theme-primary, #2383e2);
+  outline-offset: 2px;
+}
+
+.required-info {
+  font-size: 0.9em;
+  font-style: italic;
+  font-weight: normal;
+}
+
+/* -----------------------------------------------------------------------------
+   Bouton de validation
+   ----------------------------------------------------------------------------- */
+
+.btn {
+  font-family: inherit;
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+  border: none;
+  padding: 8px 10px;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  font-weight: 500;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.btn:hover {
+  background: var(--grist-theme-control-primary-hover-bg, #1a6bb8);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: var(--grist-theme-decoration-secondary, #f0f0f0);
+  color: var(--grist-theme-text, #37352f);
+}
+
+.btn-secondary:hover {
+  background: var(--grist-theme-decoration, #e0e0e0);
+}
+
+/* -----------------------------------------------------------------------------
+   Separateurs et textes personnalises
+   ----------------------------------------------------------------------------- */
+
+.separator {
+  height: 1px;
+  background: var(--grist-theme-decoration, #e0e0e0);
+  margin: 48px auto;
+  width: 100%;
+}
+
+.custom-text {
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text, #37352f);
+  margin: 12px 0 20px 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* -----------------------------------------------------------------------------
+   Popups
+   ----------------------------------------------------------------------------- */
+
+.popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2999;
+}
+
+.popup-overlay.show {
+  display: block;
+}
+
+.edit-popup,
+.filter-popup,
+.validation-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--grist-theme-popup-bg, white);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 20px var(--grist-theme-popup-shadow-outer, rgba(0, 0, 0, 0.15));
+  z-index: 3000;
+  min-width: 400px;
+}
+
+.edit-popup h3,
+.filter-popup h3,
+.validation-popup h3 {
+  font-size: var(--grist-theme-large-font-size, 16px);
+  margin-bottom: 12px;
+  color: var(--grist-theme-text, #37352f);
+}
+
+.edit-popup textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  margin-bottom: 12px;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.edit-popup-buttons,
+.filter-popup-buttons,
+.validation-popup-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.edit-popup-buttons button,
+.filter-popup-buttons button,
+.validation-popup-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+}
+
+.validation-popup label {
+  display: block;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text, #37352f);
+  margin-bottom: 8px;
+}
+
+.validation-popup input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  margin-bottom: 16px;
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.validation-popup-buttons {
+  justify-content: space-between;
+}
+
+/* -----------------------------------------------------------------------------
+   Editeur de texte riche
+   ----------------------------------------------------------------------------- */
+
+.edit-popup.rich-editor {
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  background: var(--grist-theme-bg-secondary, #f5f5f5);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px) var(--grist-theme-control-border-radius, 4px) 0 0;
+  margin-bottom: 0;
+}
+
+.editor-toolbar .toolbar-btn {
+  padding: 6px 10px;
+  background: var(--grist-theme-bg-default, white);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grist-theme-text, inherit);
+}
+
+.editor-toolbar .toolbar-btn:hover {
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+  border-color: var(--grist-theme-primary, #2383e2);
+}
+
+.editor-toolbar .toolbar-btn.active {
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+  border-color: var(--grist-theme-primary, #2383e2);
+}
+
+.editor-toolbar .toolbar-select {
+  padding: 4px 8px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  height: 32px;
+  cursor: pointer;
+  max-width: 100px;
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.editor-toolbar .toolbar-sep {
+  width: 1px;
+  background: var(--grist-theme-decoration, #e0e0e0);
+  margin: 0 4px;
+}
+
+.editor-toolbar .color-icon {
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: var(--grist-theme-black, #000);
+}
+
+.editor-toolbar .bg-color-icon {
+  font-weight: bold;
+  background: rgba(255, 255, 0, 0.3);
+  padding: 2px 4px;
+}
+
+.color-picker {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--grist-theme-popup-bg, white);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  padding: 8px;
+  box-shadow: 0 4px 12px var(--grist-theme-popup-shadow-outer, rgba(0, 0, 0, 0.15));
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.color-picker.show {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.color-picker .color-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-picker .color-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--grist-theme-primary, #2383e2);
+}
+
+.color-picker .color-btn.no-color {
+  background: var(--grist-theme-bg-default, white);
+  position: relative;
+}
+
+.color-picker .color-btn.no-color::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 1px;
+  height: 20px;
+  background: var(--grist-theme-black, #000);
+  transform: rotate(-45deg);
+  transform-origin: center;
+}
+
+.emoji-picker {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--grist-theme-popup-bg, white);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  padding: 8px;
+  box-shadow: 0 4px 12px var(--grist-theme-popup-shadow-outer, rgba(0, 0, 0, 0.15));
+  z-index: 100;
+  width: 200px;
+  margin-top: 4px;
+}
+
+.emoji-picker.show {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.emoji-picker .emoji-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--grist-theme-x-large-font-size, 18px);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+}
+
+.emoji-picker .emoji-btn:hover {
+  background: var(--grist-theme-hover-light, #f0f0f0);
+}
+
+.rich-editor-content {
+  width: 100%;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-top: none;
+  border-radius: 0 0 var(--grist-theme-control-border-radius, 4px) var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  overflow-y: auto;
+  max-height: 300px;
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.rich-editor-content a {
+  color: var(--grist-theme-link, #2383e2);
+}
+
+.rich-editor-content ul {
+  margin-left: 24px;
+  padding-left: 0;
+}
+
+.cancel {
+  background: var(--grist-theme-control-secondary-hover-bg, #f0f0f0);
+  color: var(--grist-theme-text, #37352f);
+}
+
+.save {
+  background: var(--grist-theme-control-primary-bg, #2383e2);
+  color: var(--grist-theme-control-primary-fg, white);
+}
+
+.delete {
+  background: var(--grist-theme-error, #d32f2f);
+  color: var(--grist-theme-white, white);
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-row label {
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text, #37352f);
+  margin-bottom: 0;
+}
+
+.filter-row select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  background: var(--grist-theme-input-bg, #fff);
+  color: var(--grist-theme-input-fg, inherit);
+}
+
+.filter-popup-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+/* -----------------------------------------------------------------------------
+   Pieces jointes
+   ----------------------------------------------------------------------------- */
+
+.attachment-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment-input.error .attachment-btn {
+  border-color: var(--grist-theme-error, #d32f2f);
+}
+
+.attachment-btn {
+  padding: 10px 16px;
+  background: var(--grist-theme-input-bg, #fff);
+  border: 1px dashed var(--grist-theme-input-border, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  cursor: pointer;
+  font-size: var(--grist-theme-intro-font-size, 14px);
+  color: var(--grist-theme-text-light, #666);
+  transition: background 0.2s;
+}
+
+.attachment-btn:hover {
+  background: var(--grist-theme-decoration-secondary, #e8e8e8);
+  border-color: var(--grist-theme-secondary, #999);
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachment-list:empty {
+  display: none;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--grist-theme-bg-secondary, #f9f9f9);
+  border: 1px solid var(--grist-theme-decoration, #e0e0e0);
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+}
+
+.attachment-name {
+  flex: 1;
+  font-size: var(--grist-theme-medium-font-size, 13px);
+  color: var(--grist-theme-text, #37352f);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  font-size: var(--grist-theme-x-small-font-size, 12px);
+  color: var(--grist-theme-secondary, #999);
+  flex-shrink: 0;
+}
+
+.attachment-remove {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--grist-theme-secondary, #999);
+  cursor: pointer;
+  font-size: var(--grist-theme-x-large-font-size, 18px);
+  line-height: 1;
+  border-radius: var(--grist-theme-control-border-radius, 4px);
+  flex-shrink: 0;
+}
+
+.attachment-remove:hover {
+  background: var(--grist-theme-custom-css-uikit-error-100, #ffebee);
+  color: var(--grist-theme-error, #d32f2f);
+}

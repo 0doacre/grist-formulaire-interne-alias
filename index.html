@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grist Custom Widget</title>
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/dompurify@3/dist/purify.min.js"></script>
+  <link href="marianne.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Overlay pour les popups -->
+    <div class="popup-overlay" :class="{ show: showOverlay }" @click="closeAllPopups"></div>
+
+    <!-- Modal de configuration -->
+    <div class="modal" :class="{ show: showConfigModal }">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Configuration du formulaire</h2>
+          <button class="preview-btn" @click="showConfigModal = false">Prévisualiser</button>
+        </div>
+
+        <!-- Parametres globaux -->
+        <div class="global-settings">
+          <div class="setting-group">
+            <label>Police</label>
+            <select v-model="globalFont" @change="saveConfiguration" class="setting-select">
+              <option value="">Par défaut</option>
+              <option value="'Marianne', sans-serif">Marianne (État)</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Lato', sans-serif">Lato</option>
+              <option value="'Montserrat', sans-serif">Montserrat</option>
+              <option value="'Raleway', sans-serif">Raleway</option>
+              <option value="'Oswald', sans-serif">Oswald</option>
+              <option value="'Nunito', sans-serif">Nunito</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Helvetica, sans-serif">Helvetica</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Marges</label>
+            <select v-model="globalPadding" @change="saveConfiguration" class="setting-select">
+              <option value="">Par défaut</option>
+              <option value="small">Petites</option>
+              <option value="medium">Moyennes</option>
+              <option value="large">Grandes</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Liste des elements du formulaire -->
+        <div class="modal-body">
+          <div
+            v-for="(element, index) in formElements"
+            :key="index"
+            class="element-item"
+            draggable="true"
+            @dragstart="onDragStart(index, $event)"
+            @dragend="onDragEnd"
+            @dragover.prevent="onDragOver(index, $event)"
+            @drop="onDrop(index, $event)"
+            :class="{ 'drag-over-top': dragOverIndex === index && dragPosition === 'top', 'drag-over-bottom': dragOverIndex === index && dragPosition === 'bottom' }"
+          >
+            <div class="drag-handle" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <path fill="currentColor" d="M6.5 3c.2761424 0 .5.2238576.5.5v9c0 .2761424-.2238576.5-.5.5s-.5-.2238576-.5-.5v-9c0-.2761424.2238576-.5.5-.5m3 0c.2761424 0 .5.2238576.5.5v9c0 .2761424-.2238576.5-.5.5s-.5-.2238576-.5-.5v-9c0-.2761424.2238576-.5.5-.5"/>
+              </svg>
+            </div>
+            <div class="element-content-wrapper">
+              <!-- Champ de formulaire -->
+              <template v-if="element.type === 'field'">
+                <div class="field-label-wrapper">
+                  <span class="field-label-text" v-html="element.fieldLabel || element.fieldName"></span>
+                </div>
+                <div class="element-preview field">Id colonne : {{ element.fieldName }}</div>
+              </template>
+              <!-- Separateur -->
+              <template v-else-if="element.type === 'separator'">
+                <div class="element-preview separator"></div>
+              </template>
+              <!-- Texte -->
+              <template v-else>
+                <div class="element-preview text" v-html="element.content"></div>
+              </template>
+            </div>
+            <div class="element-controls">
+              <!-- Boutons pour les champs -->
+              <template v-if="element.type === 'field'">
+                <!-- boutons spécifique au type de champ -->
+                <button v-if="isPureTextField(element)" type="button" class="icon-btn" :class="{ active: element.multiline }" @click="toggleMultiline(index)" aria-label="Multiligne" title="Multiligne" :aria-pressed="element.multiline ? 'true' : 'false'" style="margin-inline: 8px;">
+                  <span class="icon-btn-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M2 12.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5"/>
+                    </svg>
+                  </span>
+                </button>
+                <button v-if="isRefField(element)" type="button" class="icon-btn" :class="{ active: element.refDropdownFilter }" @click="showRefDropdownFilterPopup(index)" aria-label="Filtre liste déroulante" title="Filtre liste déroulante" style="margin-inline: 8px;">
+                  <span class="icon-btn-inner">
+                    <svg width="13" height="13" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
+                      <path d="M5.8535534 10.8535534c-.1952622.1952621-.5118446.1952621-.7071068 0-.1952621-.1952622-.1952621-.5118446 0-.7071068l5-5c.1952622-.1952621.5118446-.1952621.7071068 0 .1952621.1952622.1952621.5118446 0 .7071068zm1.5-5.5c-.1952622.1952621-.5118446.1952621-.7071068 0-.1952621-.1952622-.1952621-.5118446 0-.7071068L8.3185182 2.974375c1.2999462-1.2994199 3.4070174-1.2994199 4.7071068.0001432 1.2994199 1.2999463 1.2994199 3.4070174-.0000716 4.7070352l-1.672 1.672c-.1952622.1952621-.5118446.1952621-.7071068 0-.1952621-.1952622-.1952621-.5118446 0-.7071068l1.6719284-1.6719284c.9090865-.9094547.9090865-2.3835817.0001432-3.2928932-.9094547-.9090865-2.3835817-.9090865-3.2929648-.0000716zM4.6464466 6.6464466c.1952622-.1952621.5118446-.1952621.7071068 0 .1952621.1952622.1952621.5118446 0 .7071068L3.681625 9.0254818c-.9090865.9094547-.9090865 2.3835817-.0001432 3.2928932.9094547.9090865 2.3835817.9090865 3.2929648.0000716l1.672-1.672c.1952622-.1952621.5118446-.1952621.7071068 0 .1952621.1952622.1952621.5118446 0 .7071068L7.6814818 13.025625c-1.2999463 1.2994199-3.4070173 1.2994199-4.7071068-.0001432-1.2994199-1.2999462-1.2994199-3.4070173.0000716-4.7070352z"/>
+                    </svg>
+                  </span>
+                </button>
+
+                <button type="button" class="icon-btn" :class="{ active: element.required }" @click="toggleRequired(index)" aria-label="Rendre obligatoire" title="Rendre obligatoire" :aria-pressed="element.required ? 'true' : 'false'">
+                  <span class="icon-btn-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" aria-hidden="true" viewBox="0 0 16 16">
+                      <path d="M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1"/>
+                    </svg>
+                  </span>
+                </button>
+
+                <button v-if="isTextOrNumericField(element)" type="button" class="icon-btn" :class="{ active: element.maxLength }" @click="showValidationPopup(index)" aria-label="Définir un nombre de caractères maximum" title="Définir un nombre de caractères maximum">
+                  <span class="icon-btn-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+                    </svg>
+                  </span>
+                </button>
+
+                <button type="button" style="margin-inline: 8px;" class="icon-btn" :class="{ active: element.conditional }" @click="showConditionalPopup(index)" aria-label="Rendre conditionnel" title="Rendre conditionnel">
+                  <span class="icon-btn-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M5.52.359A.5.5 0 0 1 6 0h4a.5.5 0 0 1 .474.658L8.694 6H12.5a.5.5 0 0 1 .395.807l-7 9a.5.5 0 0 1-.873-.454L6.823 9.5H3.5a.5.5 0 0 1-.48-.641zM6.374 1 4.168 8.5H7.5a.5.5 0 0 1 .478.647L6.78 13.04 11.478 7H8a.5.5 0 0 1-.474-.658L9.306 1z"/>
+                    </svg>
+                  </span>
+                </button>
+
+                <button type="button" class="icon-btn" @click="editLabel(index)" aria-label="Modifier le libellé" title="Modifier le libellé">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                  </svg>
+                </button>
+              </template>
+
+              <!-- Bouton edit pour texte -->
+              <template v-if="element.type === 'text'">
+                <button type="button" class="icon-btn" @click="editContent(index)" aria-label="Modifier le texte" title="Modifier le texte">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                  </svg>
+                </button>
+              </template>
+
+              <!-- Bouton supprimer -->
+              <button @click="removeElement(index)" aria-label="Supprimer" title="Supprimer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section ajout d'element -->
+        <div class="add-section">
+          <div class="add-section-fields">
+            <select v-model="newElementType" class="element-input">
+              <option value="">-- Type d'élément --</option>
+              <option value="column">Colonne de la table</option>
+              <option value="separator">Séparateur</option>
+              <option value="text">Texte libre</option>
+            </select>
+            <select v-if="newElementType === 'column'" v-model="selectedColumn" class="element-input">
+              <option value="">-- Sélectionner une colonne --</option>
+              <option v-for="col in availableColumns" :key="col" :value="col">{{ col }}</option>
+            </select>
+            <textarea v-if="newElementType === 'text'" v-model="newElementContent" class="element-input" rows="3" placeholder="Texte"></textarea>
+          </div>
+          <button class="add-element-btn" @click="addElement">Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire principal -->
+    <div class="container" :style="containerStyle">
+      <template v-if="formSuccessMessage">
+        <div
+          ref="successMessageEl"
+          class="form-success show"
+          tabindex="-1"
+        >{{ formSuccessMessage }}</div>
+        <button type="button" class="btn btn-secondary" @click="showFormAgain">Retour au formulaire</button>
+      </template>
+      <template v-else>
+      <template v-for="element in formElements" :key="element._uid">
+        <!-- Séparateur -->
+        <div v-if="element.type === 'separator'" class="separator"></div>
+        <!-- Texte -->
+        <div v-else-if="element.type === 'text'" class="custom-text" v-html="element.content"></div>
+        <!-- Champ -->
+        <div
+          v-else-if="element.type === 'field'"
+          class="field"
+          :class="{ 'checkbox-field': columnMetadata[element.fieldName]?.isBool, hidden: !shouldShowField(element) }"
+        >
+          <template v-if="columnMetadata[element.fieldName]?.isBool">
+            <input
+              type="checkbox"
+              :id="'cb_' + element.fieldName"
+              v-model="formData[element.fieldName]"
+              :aria-required="element.required ? 'true' : null"
+              :aria-invalid="errors[element.fieldName] ? 'true' : null"
+              :aria-describedby="errors[element.fieldName] ? 'err_' + element.fieldName : null"
+              @keydown.enter.prevent="formData[element.fieldName] = !formData[element.fieldName]"
+            >
+            <label :for="'cb_' + element.fieldName" v-html="getLabelHtml(element)"></label>
+          </template>
+          <template v-else>
+            <!-- :for targets native inputs (input_X). For the custom-select the trigger
+                 has its own aria-labelledby="label_X", so :for points nowhere but with
+                 no consequence (label is also visually associated via proximity). -->
+            <label
+              :id="'label_' + element.fieldName"
+              :for="hasSelectOptions(element) || columnMetadata[element.fieldName]?.isAttachment ? null : ('input_' + element.fieldName)"
+              v-html="getLabelHtml(element)"
+            ></label>
+            <!-- Input selon le type de colonne -->
+            <!-- Attachments -->
+            <div v-if="columnMetadata[element.fieldName]?.isAttachment" class="attachment-input">
+              <input
+                type="file"
+                multiple
+                :id="'file_' + element.fieldName"
+                style="display: none"
+                @change="onFileSelect(element.fieldName, $event)"
+              >
+              <button
+                type="button"
+                class="attachment-btn"
+                :id="'btn_' + element.fieldName"
+                :aria-labelledby="'label_' + element.fieldName + ' btn_label_' + element.fieldName"
+                :aria-required="element.required ? 'true' : null"
+                :aria-invalid="errors[element.fieldName] ? 'true' : null"
+                :aria-describedby="attachmentDescribedBy(element)"
+                @click="triggerFileInput(element.fieldName)"
+              ><span :id="'btn_label_' + element.fieldName">Charger une PJ</span></button>
+              <div class="attachment-list">
+                <div v-for="(file, idx) in pendingAttachments[element.fieldName]" :key="idx" class="attachment-item">
+                  <span :id="'att_name_' + element.fieldName + '_' + idx" class="attachment-name">{{ file.name }}</span>
+                  <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
+                  <button type="button" class="attachment-remove" aria-label="Supprimer le fichier" :aria-describedby="'att_name_' + element.fieldName + '_' + idx" @click="removeAttachment(element.fieldName, idx)">×</button>
+                </div>
+              </div>
+            </div>
+            <!-- Known a11y issues parked: on Firefox + VoiceOver macOS, Tab does
+                 not focus the dd/mm/yyyy segments of native date inputs, and
+                 when the value is empty the segments announce "NaN" (documented
+                 WebKit/Gecko bug). For end-to-end accessibility, refactor into
+                 3 separate day/month/year inputs (DSFR pattern from the French
+                 government design system) — to do later. -->
+            <!-- DateTime -->
+            <input
+              v-else-if="columnMetadata[element.fieldName]?.isDateTime"
+              type="datetime-local"
+              :id="'input_' + element.fieldName"
+              v-model="formData[element.fieldName]"
+              :aria-required="element.required ? 'true' : null"
+              :aria-invalid="errors[element.fieldName] ? 'true' : null"
+              :aria-describedby="dateInputDescribedBy(element)"
+            >
+            <!-- Date -->
+            <input
+              v-else-if="columnMetadata[element.fieldName]?.isDate"
+              type="date"
+              :id="'input_' + element.fieldName"
+              v-model="formData[element.fieldName]"
+              :aria-required="element.required ? 'true' : null"
+              :aria-invalid="errors[element.fieldName] ? 'true' : null"
+              :aria-describedby="dateInputDescribedBy(element)"
+            >
+            <!-- Custom select (Choice, ChoiceList, Ref, RefList) -->
+            <div
+              v-else-if="hasSelectOptions(element)"
+              class="custom-select"
+              :class="{ open: openDropdown === element.fieldName, 'is-multi': columnMetadata[element.fieldName]?.isMultiple }"
+            >
+              <!-- Multi-select only: hidden helpers for screen readers
+                   - multi_hint: announces that this is a multi-selection (the listbox's
+                     aria-multiselectable is only announced when entering the list, not on the combobox)
+                   - count: dynamic counter of selections
+                   - selected: comma-separated labels (so users need not tab every chip)
+                   - remove: shared "remove" description for the chips -->
+              <template v-if="columnMetadata[element.fieldName]?.isMultiple">
+                <span :id="'multi_hint_' + element.fieldName" class="sr-only">Sélection multiple</span>
+                <span :id="'count_' + element.fieldName" class="sr-only">{{ getCountText(element) }}</span>
+                <span :id="'selected_' + element.fieldName" class="sr-only">{{ getSelectedValuesText(element) }}</span>
+                <span :id="'remove_' + element.fieldName" hidden>retirer</span>
+              </template>
+
+              <!-- Chips above the select (multi-select only).
+                   Each chip is a <button> whose accessible name = the value,
+                   description = "retirer". So screen readers say "Beauregard, bouton, retirer". -->
+              <ul
+                class="chips"
+                v-if="columnMetadata[element.fieldName]?.isMultiple && formData[element.fieldName]?.length"
+              >
+                <li
+                  v-for="(val, idx) in formData[element.fieldName]"
+                  :key="val"
+                  class="chip-item"
+                >
+                  <!-- aria-labelledby: only on the FIRST chip (idx === 0) we chain
+                       label_X + count_X + chip_X_0 → "Communes, 3 selections, Beauregard".
+                       Subsequent chips use just their own text → "Bénonces" on its own.
+                       Avoids the verbose repetition "Communes 3 selections X" on every chip
+                       as the user sweeps through the list. -->
+                  <button
+                    type="button"
+                    class="chip"
+                    :id="'chip_' + element.fieldName + '_' + idx"
+                    :aria-labelledby="idx === 0 ? ('label_' + element.fieldName + ' count_' + element.fieldName + ' chip_' + element.fieldName + '_0') : null"
+                    :aria-describedby="'remove_' + element.fieldName"
+                    @click.stop="removeSelection(element, val, idx, $event)"
+                    @keydown="onChipKeydown(element, val, idx, $event)"
+                  >{{ getOptionLabel(element, val) }}<span class="chip-x" aria-hidden="true">×</span></button>
+                </li>
+              </ul>
+
+              <!-- Trigger button that expands the popup. Not role=combobox: the sole
+                   combobox is the search input inside (avoids two comboboxes).
+                   While open, focus lives on the search combobox — hide this trigger
+                   from the a11y tree so AT does not offer a stale expanded button. -->
+              <button
+                type="button"
+                class="custom-select-display"
+                :tabindex="openDropdown === element.fieldName ? -1 : 0"
+                aria-haspopup="true"
+                :aria-expanded="openDropdown === element.fieldName"
+                :aria-controls="'dropdown_' + element.fieldName"
+                :id="'combo_' + element.fieldName"
+                :aria-labelledby="comboLabelledBy(element)"
+                :aria-describedby="comboDescribedBy(element)"
+                :aria-required="element.required ? 'true' : null"
+                :aria-invalid="errors[element.fieldName] ? 'true' : null"
+                :aria-hidden="openDropdown === element.fieldName ? 'true' : null"
+                @click="toggleDropdown(element.fieldName)"
+                @keydown="onSelectKeydown(element, $event)"
+              >
+                <!-- Multi-select: permanent placeholder (the values are in the chips above).
+                     aria-hidden: the value "read" for SR comes from aria-labelledby / describedby. -->
+                <span v-if="columnMetadata[element.fieldName]?.isMultiple" class="placeholder" aria-hidden="true">-- Sélectionner --</span>
+                <!-- Single-select: selected value (dark) or placeholder (gray).
+                     - The span has an id so it can be referenced by the trigger's
+                       aria-labelledby (SR reads "label, value, button").
+                     - aria-hidden="true" prevents VoiceOver from navigating into the
+                       span's text in web mode (otherwise the down arrow would focus
+                       the placeholder's "--"). The ARIA spec allows aria-labelledby
+                       to reference an aria-hidden element: the text content is still
+                       used to compute the accessible name. -->
+                <span
+                  v-else
+                  :id="'value_' + element.fieldName"
+                  :class="formData[element.fieldName] ? 'single-value' : 'placeholder'"
+                  aria-hidden="true"
+                >{{ formData[element.fieldName] ? getOptionLabel(element, formData[element.fieldName]) : '-- Sélectionner --' }}</span>
+                <span class="dropdown-arrow" aria-hidden="true">▼</span>
+              </button>
+              <!-- Popup controlled by the trigger (aria-controls). Includes the
+                   search combobox + listbox — not just the list. No role=dialog:
+                   that would re-announce the field name on open before the
+                   combobox; aria-expanded + aria-controls are enough here. -->
+              <div
+                class="custom-select-dropdown"
+                :id="'dropdown_' + element.fieldName"
+                v-if="openDropdown === element.fieldName"
+              >
+                <!-- Loading state while fetching ref data -->
+                <div v-if="loadingDropdown === element.fieldName" class="dropdown-loading" role="status">
+                  Chargement...
+                </div>
+                <!-- Normal dropdown content. Focus moves here on open: this input
+                     IS the editable combobox (W3C APG). aria-activedescendant is
+                     omitted until the user filters or arrows — otherwise many SRs
+                     skip the combobox announcement and only read the first option.
+                     Its aria-controls correctly targets only the listbox. -->
+                <template v-else>
+                  <input
+                    type="text"
+                    class="search-input"
+                    placeholder="Rechercher..."
+                    role="combobox"
+                    aria-expanded="true"
+                    aria-haspopup="listbox"
+                    aria-autocomplete="list"
+                    :aria-controls="'listbox_' + element.fieldName"
+                    :aria-activedescendant="activeOptionId(element)"
+                    :aria-labelledby="'label_' + element.fieldName"
+                    :aria-describedby="searchDescribedBy(element)"
+                    :aria-required="element.required ? 'true' : null"
+                    :aria-invalid="errors[element.fieldName] ? 'true' : null"
+                    :ref="el => setSearchInputRef(element.fieldName, el)"
+                    v-model="searchQuery[element.fieldName]"
+                    @click.stop
+                    @input="onSearchInput(element, $event)"
+                    @keydown="onSearchKeydown(element, $event)"
+                  >
+                  <ul
+                    class="options-list"
+                    role="listbox"
+                    :id="'listbox_' + element.fieldName"
+                    :aria-multiselectable="columnMetadata[element.fieldName]?.isMultiple ? 'true' : 'false'"
+                    :aria-label="'Options pour ' + (element.fieldLabel || element.fieldName)"
+                  >
+                    <li
+                      v-for="(opt, idx) in getFilteredOptions(element)"
+                      :key="opt.id"
+                      :id="'opt_' + element.fieldName + '_' + idx"
+                      class="option"
+                      role="option"
+                      :class="{ selected: isOptionSelected(element.fieldName, opt.id), active: activeIndex[element.fieldName] === idx, empty: opt.isEmpty }"
+                      :aria-selected="isOptionSelected(element.fieldName, opt.id) ? 'true' : 'false'"
+                      @click.stop="selectOption(element, opt.id)"
+                      @mouseenter="activeIndex[element.fieldName] = idx"
+                    ><span class="option-check" aria-hidden="true">{{ isOptionSelected(element.fieldName, opt.id) ? '✓' : '' }}</span>{{ opt.label }}</li>
+                    <li v-if="getFilteredOptions(element).length === 0" class="no-results" role="status">
+                      Aucun résultat
+                    </li>
+                    <li v-if="hasMoreOptions(element)" class="more-results" role="status">
+                      Affinez votre recherche pour voir plus de résultats
+                    </li>
+                  </ul>
+                </template>
+              </div>
+              <!-- Live region for dynamic announcements (multi-select only):
+                   "X ajoutée, N sélectionnées" / "X retirée, N sélectionnées" -->
+              <div
+                v-if="columnMetadata[element.fieldName]?.isMultiple"
+                class="sr-only"
+                aria-live="polite"
+                aria-atomic="true"
+              >{{ liveMessage[element.fieldName] || '' }}</div>
+            </div>
+            <!-- Textarea (multiline) -->
+            <textarea
+              v-else-if="element.multiline"
+              :id="'input_' + element.fieldName"
+              v-model="formData[element.fieldName]"
+              :aria-required="element.required ? 'true' : null"
+              :aria-invalid="errors[element.fieldName] ? 'true' : null"
+              :aria-describedby="textInputDescribedBy(element)"
+              rows="4"
+            ></textarea>
+            <!-- Default text/numeric input.
+                 inputmode adapts the mobile keyboard (numeric / decimal).
+                 aria-describedby points at visible help text (or the error). -->
+            <input
+              v-else
+              type="text"
+              :id="'input_' + element.fieldName"
+              :inputmode="getInputMode(element)"
+              v-model="formData[element.fieldName]"
+              :aria-required="element.required ? 'true' : null"
+              :aria-invalid="errors[element.fieldName] ? 'true' : null"
+              :aria-describedby="textInputDescribedBy(element)"
+            >
+            <!-- sr-only hint for Date / DateTime fields.
+                 Read by screen readers via aria-describedby — explains the keyboard
+                 interaction (arrow keys) because browsers awkwardly announce the
+                 dd/mm/yyyy segments of native date inputs. -->
+            <span
+              v-if="columnMetadata[element.fieldName]?.isDate || columnMetadata[element.fieldName]?.isDateTime"
+              :id="'hint_date_' + element.fieldName"
+              class="sr-only"
+            >Utilisez les flèches haut et bas pour modifier la valeur, gauche et droite pour passer d'un champ à l'autre.</span>
+          </template>
+          <!-- Per-field help (constraints known before submit) and error.
+               Both stay in the DOM; :empty { display: none } hides blanks so
+               Firefox+VoiceOver does not announce them as "new content".
+               Help is cleared when an error is present so only one shows.
+               NO role="alert": on submit we focus the first invalid field so
+               VO announces via aria-describedby ("[label], invalid, [message]"). -->
+          <div
+            :id="'help_' + element.fieldName"
+            class="help-text"
+          >{{ errors[element.fieldName] ? '' : (getFieldHelpText(element) || '') }}</div>
+          <div
+            :id="'err_' + element.fieldName"
+            class="error-message"
+          >{{ errors[element.fieldName] || '' }}</div>
+        </div>
+      </template>
+
+      <!-- form-error is for non-validation errors (network, server). Field validation
+           focuses the first invalid control instead; per-field errors are announced
+           via aria-describedby when focus lands. On success the form is replaced by
+           a focusable message + "Retour au formulaire". -->
+      <div v-if="formErrorMessage" role="alert" class="form-error show">{{ formErrorMessage }}</div>
+      <button type="button" class="btn" @click="submitForm">Valider</button>
+      </template>
+    </div>
+
+    <!-- Popup d'edition de texte riche -->
+    <div
+      v-if="editPopup.show"
+      id="edit-popup"
+      class="edit-popup rich-editor"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-popup-title"
+      tabindex="-1"
+      @keydown="onFilterPopupKeydown"
+      @click="closePickersOnClickOutside($event)"
+    >
+      <h3 id="edit-popup-title">{{ editPopup.title }}</h3>
+      <div class="editor-toolbar">
+        <button type="button" class="toolbar-btn" :class="{ active: activeFormats.bold }" @click="execCmd('bold')" title="Gras (Ctrl+B)"><strong>B</strong></button>
+        <button type="button" class="toolbar-btn" :class="{ active: activeFormats.italic }" @click="execCmd('italic')" title="Italique (Ctrl+I)"><em>I</em></button>
+        <button type="button" class="toolbar-btn" :class="{ active: activeFormats.underline }" @click="execCmd('underline')" title="Souligne (Ctrl+U)"><u>U</u></button>
+        <span class="toolbar-sep"></span>
+        <button type="button" class="toolbar-btn" @click="execCmd('insertUnorderedList')" title="Liste a puces">•</button>
+        <button type="button" class="toolbar-btn" @click="insertLink" title="Lien">🔗</button>
+        <div class="color-picker-wrapper">
+          <button type="button" class="toolbar-btn" @click.stop="toggleEmojiPicker" title="Emoji">😀</button>
+          <div class="emoji-picker" :class="{ show: emojiPicker.show }">
+            <button v-for="emoji in emojis" :key="emoji" type="button" class="emoji-btn" @click="insertEmoji(emoji)">{{ emoji }}</button>
+          </div>
+        </div>
+        <span class="toolbar-sep"></span>
+        <select class="toolbar-select" @change="applyFormat($event)" title="Style">
+          <option value="">Style</option>
+          <option value="h1">Titre 1</option>
+          <option value="h2">Titre 2</option>
+          <option value="h3">Titre 3</option>
+          <option value="p">Paragraphe</option>
+        </select>
+        <span class="toolbar-sep"></span>
+        <div class="color-picker-wrapper">
+          <button type="button" class="toolbar-btn" @click.stop="toggleColorPicker('text')" title="Couleur du texte"><span class="color-icon">A</span></button>
+          <div class="color-picker" :class="{ show: colorPicker.show && colorPicker.type === 'text' }">
+            <button type="button" class="color-btn no-color" @click="removeColor('foreColor')" title="Aucune couleur"></button>
+            <button v-for="color in editorColors" :key="color" type="button" class="color-btn" :style="{ background: color }" @click="applyColor('foreColor', color)"></button>
+          </div>
+        </div>
+        <div class="color-picker-wrapper">
+          <button type="button" class="toolbar-btn" @click.stop="toggleColorPicker('bg')" title="Couleur de fond"><span class="bg-color-icon">A</span></button>
+          <div class="color-picker" :class="{ show: colorPicker.show && colorPicker.type === 'bg' }">
+            <button type="button" class="color-btn no-color" @click="removeColor('backColor')" title="Aucune couleur"></button>
+            <button v-for="color in editorColors" :key="'bg-'+color" type="button" class="color-btn" :style="{ background: color }" @click="applyColor('backColor', color)"></button>
+          </div>
+        </div>
+      </div>
+      <div
+        ref="richEditor"
+        class="rich-editor-content"
+        contenteditable="true"
+        @keydown="onEditorKeydown"
+        @keyup="onEditorSelect"
+        @mouseup="onEditorSelect"
+        v-html="editPopup.value"
+      ></div>
+      <div class="edit-popup-buttons">
+        <button type="button" class="cancel" @click="closeEditPopup">Annuler</button>
+        <button type="button" class="save" @click="saveRichEdit">Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- Popup de condition -->
+    <div
+      v-if="conditionalPopup.show"
+      id="conditional-popup"
+      class="filter-popup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conditional-popup-title"
+      tabindex="-1"
+      @keydown="onFilterPopupKeydown"
+    >
+      <h3 id="conditional-popup-title">Affichage conditionnel</h3>
+      <div class="filter-row">
+        <label>Ce champ est affiché si :</label>
+      </div>
+      <div class="filter-row">
+        <select v-model="conditionalPopup.field" @change="updateConditionalValues">
+          <option value="">-- Sélectionner un champ --</option>
+          <option v-for="f in conditionalFields" :key="f.fieldName" :value="f.fieldName">{{ f.fieldName }}</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <select v-model="conditionalPopup.operator">
+          <option value="equals">est égal à</option>
+          <option value="notEquals">n'est pas égal à</option>
+        </select>
+      </div>
+      <div class="filter-row" v-if="conditionalPopup.tooManyValues">
+        <div class="filter-too-many">Cette colonne contient trop de valeurs pour être utilisée comme condition.</div>
+      </div>
+      <div class="filter-row" v-else>
+        <select v-model="conditionalPopup.value">
+          <option value="">-- Sélectionner une valeur --</option>
+          <option v-for="v in conditionalPopup.values" :key="v.id" :value="v.id">{{ v.label }}</option>
+        </select>
+      </div>
+      <div class="filter-popup-buttons">
+        <button type="button" v-if="conditionalPopup.hasExisting" class="delete" @click="deleteConditional">Supprimer</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="cancel" @click="closeAllPopups">Annuler</button>
+          <button type="button" class="save" @click="saveConditional">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup de validation (maxLength) -->
+    <div
+      v-if="validationPopup.show"
+      id="validation-popup"
+      class="validation-popup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="validation-popup-title"
+      tabindex="-1"
+      @keydown="onFilterPopupKeydown"
+    >
+      <h3 id="validation-popup-title">Validation du champ</h3>
+      <label for="validation-max-length">Nombre max de caractères :</label>
+      <input id="validation-max-length" type="number" v-model="validationPopup.maxLength" min="1">
+      <div class="validation-popup-buttons">
+        <button type="button" v-if="validationPopup.hasExisting" class="delete" @click="deleteValidation">Supprimer</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="cancel" @click="closeAllPopups">Annuler</button>
+          <button type="button" class="save" @click="saveValidation">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dropdown filter popup (Ref/RefList) -->
+    <div
+      v-if="refDropdownFilterPopup.show"
+      id="ref-dropdown-filter-popup"
+      class="filter-popup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ref-dropdown-filter-popup-title"
+      tabindex="-1"
+      @keydown="onFilterPopupKeydown"
+    >
+      <h3 id="ref-dropdown-filter-popup-title">Filtre sur liste déroulante</h3>
+      <div class="filter-row">
+        <label>Filtrer cette colonne par rapport à :</label>
+      </div>
+      <div class="filter-row">
+        <select v-model="refDropdownFilterPopup.filterByField" @change="onRefDropdownFilterFieldChange">
+          <option value="">-- Sélectionner un champ --</option>
+          <option v-for="f in refDropdownFilterPopup.eligibleFields" :key="f.fieldName" :value="f.fieldName">{{ f.label }}</option>
+        </select>
+      </div>
+      <div v-if="refDropdownFilterPopup.rule" class="filter-row">
+        <div class="ref-filter-rule">Règle : <code>{{ refDropdownFilterPopup.rule }}</code></div>
+      </div>
+      <div v-if="refDropdownFilterPopup.eligibleFields.length === 0" class="filter-row">
+        <div class="ref-filter-no-fields">Aucun champ de référence compatible dans le formulaire.</div>
+      </div>
+      <div class="filter-popup-buttons">
+        <button type="button" v-if="refDropdownFilterPopup.hasExisting" class="delete" @click="deleteRefDropdownFilter">Supprimer</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="cancel" @click="closeAllPopups">Annuler</button>
+          <button type="button" class="save" @click="saveRefDropdownFilter">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
