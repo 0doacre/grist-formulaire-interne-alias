@@ -611,7 +611,8 @@ const app = createApp({
         formElements: toRaw(formElements.value),
         globalFont: globalFont.value,
         globalPadding: globalPadding.value,
-        ...(previous.columnsMeta ? { columnsMeta: previous.columnsMeta } : {})
+        ...(previous.columnsMeta ? { columnsMeta: previous.columnsMeta } : {}),
+        ...(previous.refFilters ? { refFilters: previous.refFilters } : {})
       });
     }
 
@@ -1393,6 +1394,19 @@ const app = createApp({
       try {
         const refData = await grist.docApi.fetchTable(meta.refTableName);
         const displayColId = meta.refDisplayCol;
+        // ALIAS : liste limitée au périmètre de saisie. Le réglage (clé refFilters) nomme, pour un champ, une colonne
+        // de la table référencée ; seules les lignes où elle vaut vrai sont proposées. Les droits de Grist ne laissent
+        // lire cette colonne à un rôle que sur ses propres lignes : ailleurs la cellule arrive masquée, donc écartée.
+        try {
+          const refFilters = ((await grist.getOptions()) || {}).refFilters || {};
+          const filterCol = refFilters[colId];
+          if (filterCol && refData[filterCol]) {
+            const keep = refData.id.map((_, idx) => refData[filterCol][idx] === true);
+            for (const key of Object.keys(refData)) {
+              refData[key] = refData[key].filter((_, idx) => keep[idx]);
+            }
+          }
+        } catch (e) { }
 
         // Pre-compute lowerLabel for search filter (avoids 45k toLowerCase per keystroke).
         // Sort alphabetically (locale-aware, French) so the slice(MAX_DISPLAYED_OPTIONS)
